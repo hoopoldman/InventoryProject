@@ -35,6 +35,7 @@ public class Mystore implements Store{
     }   //재고를 저장해주는 함수
     public Item delete_Item(){
 
+        return null;
     }   //재고를 빼주는 함수
     public void show_Store_Item(){
 
