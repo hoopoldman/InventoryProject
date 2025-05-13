@@ -17,6 +17,22 @@ public class Item {
         this.site = site;
     }
 
+    public Item(String name, int num, double price, String site) {
+        this.company = "정보 없음";
+        this.name = name;
+        this.num = num;
+        this.price = price;
+        this.site = site;
+    }
+
+    public Item(String name, int num, double price) {
+        this.company = "정보 없음";
+        this.name = name;
+        this.num = num;
+        this.price = price;
+        this.site = "정보 없음";
+    }
+
     public Item(String company, String name, int num, double price){
         this.company = company;
         this.name = name;
