@@ -180,7 +180,7 @@ public class Mystore implements Store{
                 break;
             case 3:
                 Item item3 = new Item(check_temp.getName(), check_temp.getNum(), check_temp.getStore());
-                inventory.add(item3);1
+                inventory.add(item3);
                 storeList.put(store, getInventory());
                 break;
             default:
