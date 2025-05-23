@@ -13,6 +13,7 @@ public class Menu {
         while (true) {
             int choice;
             try{
+                System.out.println("메뉴 선택창으로 이동합니다...");
                 System.out.println("========================================================");
                 System.out.println("1) 재고 저장 2) 재고 삭제 3) 검색 ver1 4) 검색 ver2 0) 종료");
                 System.out.println("3번은 가게 별 재고 확인입니다.");
@@ -26,6 +27,7 @@ public class Menu {
                         store.store_item();
                         break;
                     case 2:
+                        store.delete_Item();
                         break;
                     case 3:
                         store.show_Store_Item();
@@ -42,7 +44,6 @@ public class Menu {
             }catch (InputMismatchException e){
                 System.out.println("예외 처리: " + e.getMessage());
             } finally {
-                System.out.println("메뉴 선택창으로 이동합니다...");
                 System.out.println();
             }
         }

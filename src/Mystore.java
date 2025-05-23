@@ -7,6 +7,7 @@ public class Mystore implements Store{
     public Scanner scanner = new Scanner(System.in);  //Scanner 객체
     private ArrayList<Item> inventory = new ArrayList<>();  //각 가게의 모든 재고 배열
     private Map<String, ArrayList<Item>> sameItemList = new HashMap<>();  //각 가게의 아이템의
+
     Mystore(){}
 
     //재고를 저장해주는 함수
@@ -35,7 +36,7 @@ public class Mystore implements Store{
             System.out.print("자세히 모르시다면 0으로 입력해주세요! :  ");
             price = scanner.nextInt();  //가격 입력받기
 
-            Item temp = new Item(name, price);
+            Item temp = new Item(name, price, store);
             for(Item item: inventory){
                 if(item.equals(temp)){
                     System.out.println("이미 등록된 제품입니다.");
@@ -55,7 +56,7 @@ public class Mystore implements Store{
                     }
                     return;  //무한 루프 문제 해결
                 }
-            }
+            }  //동일 아이템 체크,,이것도 함수로 리팩토링
 
             System.out.println("등록할 아이템의 재고를 입력해주세요");
             System.out.print("자세히 모르시다면 0으로 입력해주세요! :  ");
@@ -65,7 +66,7 @@ public class Mystore implements Store{
             System.out.print("자세히 모르시다면 빈칸으로 입력해주세요! : ");
             company = scanner.next();
             site = scanner.next();
-            Item check_temp = new Item(company, name, num, price, site);  //아이템 임시객체 만들기
+            Item check_temp = new Item(company, name, num, price, site, store);  //아이템 임시객체 만들기
             checkCondition(check_temp, store);  //아이템 임시객체와 store을 받음
 
         }catch (InputMismatchException e){
@@ -79,6 +80,14 @@ public class Mystore implements Store{
             scanner.nextLine();
         }
     }   //재고를 저장해주는 함수
+
+    public void show_Item(String name){
+        for(Item item:inventory){
+            if(name.equals(item.getName())){
+                System.out.println(item);
+            }
+        }
+    } //해당 아이템의 재고를 보여주는 함수(모든 가게 포함)
 
    public Item delete_Item(){
         try{
@@ -100,13 +109,34 @@ public class Mystore implements Store{
                 return null;
             }
 
+            show_Item(name);
+            String code;
+            System.out.println("삭제할 아이템의 제품 코드를 입력해주세요 : ");
+            code = scanner.next();
             System.out.print("진짜 삭제하시겠습니까?(Y/N) : ");
             choice = scanner.next();
             choice = choice.toUpperCase();
             switch (choice){
                 case "Y":
                     System.out.println("삭제하겠습니다.");
-                    inventory.remove(index);
+                    Iterator<Item> it = inventory.iterator();
+                    while (it.hasNext()) {
+                        Item item = it.next();
+                        if (code.equals(item.getItemCode())) {
+                            it.remove();  // 안전한 삭제
+                            System.out.println("전체 재고에서 삭제하겠습니다!");
+
+                            String storeName = item.getStore();
+                            if (storeList.containsKey(storeName)) {
+                                storeList.get(storeName).removeIf(i -> i.getItemCode().equals(code));
+                                System.out.println(storeName + "의 아이템을 삭제하겠습니다.");
+                                overwriteStoreCSV(storeName);
+                            }
+                            break;
+                        }
+                    }
+                    overwriteInventoryCSV();
+                    break;
                 case "N":
                     System.out.println("삭제하지 않겠습니다.");
                     return null;
@@ -124,26 +154,33 @@ public class Mystore implements Store{
     //재고에 저장된 정보에 따라 저장해주는 함수 (파일과 배열 둘다) , 그리고 가게도
     public void checkCondition(Item check_temp, String store){
         int condition = filter_Item(check_temp);  //필터 함수 만들기, count를 반환하여 condition에 저장
+
+        // 가게별 재고 배열 꺼내기 또는 새로 생성
+        ArrayList<Item> store_inventory;
+        if (storeList.containsKey(store)) {
+            store_inventory = storeList.get(store);
+        } else {
+            store_inventory = new ArrayList<>();
+        }
+
         switch(condition){
             case 0:
                 inventory.add(check_temp); //check_temp 를 리스트에 넣어준다. 왜 바로 넣어주냐? 사용자가 다 입력한거임!
-                getInventory().add(check_temp);
                 storeList.put(store, getInventory());
                 break;
             case 1:
-                Item item1 = new Item(check_temp.getName(), check_temp.getNum(), check_temp.getPrice(), check_temp.getSite());
+                Item item1 = new Item(check_temp.getName(), check_temp.getNum(), check_temp.getPrice(), check_temp.getSite(), check_temp.getStore());
                 inventory.add(item1);
-                getInventory().add(item1);
                 storeList.put(store, getInventory());
                 break;
             case 2:
-                Item item2 = new Item(check_temp.getName(), check_temp.getNum(), check_temp.getPrice());
-                getInventory().add(item2);
+                Item item2 = new Item(check_temp.getName(), check_temp.getNum(), check_temp.getPrice(), check_temp.getStore());
+                inventory.add(item2);
                 storeList.put(store, getInventory());
                 break;
             case 3:
-                Item item3 = new Item(check_temp.getName(), check_temp.getNum());
-                getInventory().add(item3);
+                Item item3 = new Item(check_temp.getName(), check_temp.getNum(), check_temp.getStore());
+                inventory.add(item3);1
                 storeList.put(store, getInventory());
                 break;
             default:
@@ -160,6 +197,48 @@ public class Mystore implements Store{
                 break;
         }
         saveInventoryToCSV();
+        saveStoreToCSV(store);
+    }
+
+    public void overwriteStoreCSV(String storeName) {
+        String fileName = storeName + ".csv";
+        if (!storeList.containsKey(storeName)) return;
+
+        try (PrintWriter pw = new PrintWriter(new FileWriter(fileName, false))) {
+            pw.println("이름 , 수량 , 가격 , 제조 회사 , 사이트 , 가게 , 제품코드");  // 헤더 (필드에 맞게 조정)
+            for (Item item : storeList.get(storeName)) {
+                pw.printf("%s , %d , %.2f , %s , %s , %s , %s%n",
+                        item.getName(),
+                        item.getNum(),
+                        item.getPrice(),
+                        item.getCompany(),
+                        item.getSite(),
+                        item.getStore(),
+                        item.getItemCode()
+                );
+            }
+        } catch (IOException e) {
+            System.out.println(storeName + ".csv 파일 저장 중 오류: " + e.getMessage());
+        }
+    }
+
+    public void overwriteInventoryCSV() {
+        try (PrintWriter pw = new PrintWriter(new FileWriter("inventory.csv", false))) {
+            pw.println("이름 , 수량 , 가격 , 제조 회사 , 사이트 , 가게 , 제품코드");  // 헤더 (필드에 맞게 조정)
+            for (Item item : inventory) {
+                pw.printf("%s , %d , %.2f , %s , %s , %s , %s%n",
+                        item.getName(),
+                        item.getNum(),
+                        item.getPrice(),
+                        item.getCompany(),
+                        item.getSite(),
+                        item.getStore(),
+                        item.getItemCode()
+                );
+            }
+        } catch (IOException e) {
+            System.out.println("inventory.csv 파일 저장 중 오류: " + e.getMessage());
+        }
     }
 
     public void printInventoryCsv() {
@@ -170,7 +249,7 @@ public class Mystore implements Store{
                 System.out.println(line);
             }
         } catch(FileNotFoundException e){
-            System.out.println("파일을 찾는데 실패하였습니다.");
+            System.out.println("가게 재고 파일을 찾는데 실패하였습니다.");
         } catch (IOException e) {
             System.out.println("파일을 읽는 도중 오류가 발생했습니다: " + e.getMessage());
         }
@@ -182,23 +261,25 @@ public class Mystore implements Store{
 
         try (PrintWriter pw = new PrintWriter(new FileWriter(file, true))) {
             if (!fileExists) {
-                pw.println("이름 , 수량 , 가격 , 제조 회사 , 사이트 ");  // 파일이 없었으면 헤더 작성
+                pw.println("이름 , 수량 , 가격 , 제조 회사 , 사이트 , 가게 , 제품코드");  // 파일이 없었으면 헤더 작성
             }
 
             for (Item item : inventory) {
-                pw.printf("%s , %d , %.2f , %s , %s %n",
+                pw.printf("%s , %d , %.2f , %s , %s , %s , %s %n",
                         item.getName(),
                         item.getNum(),
                         item.getPrice(),
                         item.getCompany(),
-                        item.getSite()
+                        item.getSite(),
+                        item.getStore(),
+                        item.getItemCode()
                 );  //csv 파일: , 형식으로 데이터를 구분한다.
             }
 
             System.out.println("전체 재고(inventory)를 CSV 파일에 저장했습니다.");
 
         } catch (FileNotFoundException e){
-            System.out.println("파일을 찾는 데 실패하였습니다.");
+            System.out.println("전체 재고 파일을 찾는 데 실패하였습니다.");
         } catch (IOException e) {
             System.out.println("파일 오류!");
         }
@@ -213,7 +294,7 @@ public class Mystore implements Store{
                 System.out.println(line);
             }
         } catch(FileNotFoundException e){
-            System.out.println("파일을 찾는데 실패하였습니다.");
+            System.out.println("가게 재고 파일을 찾는데 실패하였습니다.");
         } catch (IOException e) {
             System.out.println("파일을 읽는 도중 오류가 발생했습니다: " + e.getMessage());
         }
@@ -234,16 +315,18 @@ public class Mystore implements Store{
 
         try (PrintWriter pw = new PrintWriter(new FileWriter(file, true))) {
             if (!fileExists) {
-                pw.println("name,num,price,company,site");  // 새 파일일 때만 헤더 작성
+                pw.println("이름 , 수량 , 가격 , 제조 회사 , 사이트 , 가게 , 제품코드");  // 새 파일일 때만 헤더 작성
             }
 
             for (Item item : storeList.get(store)) {
-                pw.printf("%s,%d,%.2f,%s,%s%n",
+                pw.printf(" %s , %d , %.2f , %s , %s , %s , %s %n",
                         item.getName(),
                         item.getNum(),
                         item.getPrice(),
                         item.getCompany(),
-                        item.getSite()
+                        item.getSite(),
+                        item.getStore(),
+                        item.getItemCode()
                 );
             }
 
@@ -278,10 +361,6 @@ public class Mystore implements Store{
         }
     }   //가게 안의 재고를 보여주는 함수
 
-    /* public void show_Item(){
-
-    } //해당 아이템의 재고를 보여주는 함수(모든 가게 포함)*/
-
     public int filter_Item(Item check_temp){
         int count = 0;  //count 변수가 ++할때마다 누락되어있는 정보수 증가!
         if(check_temp.getCompany().equals("")){
@@ -296,6 +375,19 @@ public class Mystore implements Store{
         return count;
     }  // 사용자가 검색한 조건에 따라 상품 필터링
 
+
+    @Override
+    public boolean equals(Object object) {
+        if (this == object) return true;
+        if (object == null || getClass() != object.getClass()) return false;
+        Mystore mystore = (Mystore) object;
+        return Objects.equals(store, mystore.store);
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hashCode(store);
+    }
 
     public String getStore() {
         return store;
@@ -325,17 +417,5 @@ public class Mystore implements Store{
         this.storeList = storeList;
     }
 
-    @Override
-    public boolean equals(Object object) {
-        if (this == object) return true;
-        if (object == null || getClass() != object.getClass()) return false;
-        Mystore mystore = (Mystore) object;
-        return Objects.equals(store, mystore.store);
-    }
-
-    @Override
-    public int hashCode() {
-        return Objects.hashCode(store);
-    }
 }
 
