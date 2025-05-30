@@ -7,7 +7,7 @@ public class Item {
     private String company;  //물품 제작회사
     private static int itemCount = 0;       // 아이템 객체 전체에서 공유되는 변수
     private String itemCode;                // 개별 아이템 코드
-    private String store;
+    private String store;                   // 소속되어있는 가게
     public Item(){}  //기본 생성자
 
     @Override
@@ -22,6 +22,8 @@ public class Item {
     public int hashCode() {
         return Objects.hashCode(itemCode);
     }
+
+    public Item(String itemCode) { this.itemCode = itemCode; }
 
     //사용자가 제품 이름이랑 가격까지는 입력하게 방지!
     public Item(String company, String name, int num, double price, String site, String store) {

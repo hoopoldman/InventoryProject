@@ -8,8 +8,8 @@ public interface Store {
     public int filter_Item(Item temp);  // 사용자가 검색한 조건에 따라 상품 필터링
     public void saveInventoryToCSV();  //전체 재고를 csv 형식 파일에 저장해주는 함수
     public void printInventoryCsv();  //csv 파일에 저장된 전체 재고를 출력해주는 함수
-    public void saveStoreToCSV(String store);  //전체 재고를 csv 형식 파일에 저장해주는 함수
+    public void saveStoreToCSV(StoreInfo registeredStore);  //전체 재고를 csv 형식 파일에 저장해주는 함수
     public void printStoreCSV(String store);  //가게당 재고를 출력해주는 함수
     public void overwriteInventoryCSV(); //삭제하면 다시 재고저장
-    public void overwriteStoreCSV(String storeName);
+    public void overwriteStoreCSV(StoreInfo temp);
 }

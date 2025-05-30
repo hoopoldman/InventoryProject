@@ -7,8 +7,7 @@ public class Menu {
         Scanner scanner = new Scanner(System.in);
         Mystore store = new Mystore();
 
-        System.out.println("😁 재고 확인 프로그램 실행!");
-        System.out.println();  //단순하게 이뻐보이게 하려고..
+        System.out.println("😁 재고 확인 프로그램 실행!\n");
 
         while (true) {
             int choice;
